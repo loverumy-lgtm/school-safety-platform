@@ -1,0 +1,5 @@
+<!doctype html><html lang="ko"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>시설안전 모듈 통합 예시</title><body style="margin:0"><div id="safety-area"></div><script src="assets.js"></script><script src="module.js"></script><script>
+const safety=SchoolSafetyHistory.mount(document.getElementById('safety-area'),{assets:SchoolSafetyAssets,storageKey:'school-safety-history-v1'});
+safety.ready.then(()=>{console.log('시설안전 모듈 준비됨');});
+document.getElementById('safety-area').addEventListener('school-safety:changed',event=>{console.log('변경 요약',event.detail);});
+</script></body></html>
