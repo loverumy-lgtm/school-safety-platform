@@ -1,0 +1,97 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      chatbot: ${{ steps.f.outputs.chatbot }}
+      msds: ${{ steps.f.outputs.msds }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            chatbot:
+              - 'apps/chatbot/**'
+            msds:
+              - 'apps/msds/**'
+
+  chatbot-check:
+    needs: changes
+    if: needs.changes.outputs.chatbot == 'true' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chatbot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/chatbot/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
+  msds-check:
+    needs: changes
+    if: needs.changes.outputs.msds == 'true' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: node --check apps/msds/server.js
+
+  build-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble static site
+        run: |
+          mkdir -p _site/facility-safety
+          cp -r portal/. _site/
+          cp -r apps/facility-safety/. _site/facility-safety/
+          cat > _site/config.js <<EOF
+          window.PORTAL_CONFIG = {
+            msdsUrl: "${{ vars.MSDS_URL }}",
+            chatbotUrl: "${{ vars.CHATBOT_URL }}",
+            facilityUrl: "facility-safety/"
+          };
+          EOF
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: [build-site, chatbot-check, msds-check]
+    # chatbot-check / msds-check가 건너뛰어져도 실패만 아니면 배포합니다.
+    if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.build-site.result == 'success' && needs.chatbot-check.result != 'failure' && needs.msds-check.result != 'failure' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
