@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>학교 산업안전보건 통합 포털</title>
+<style>
+  :root{--bg:#0f2a5c;--card:#fff;--ink:#12213f;--muted:#5b6b8c;--accent:#2f6fed}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;background:linear-gradient(160deg,#0f2a5c,#1d4fb8);min-height:100vh;color:var(--ink)}
+  header{padding:48px 24px 24px;text-align:center;color:#fff}
+  header h1{margin:0 0 8px;font-size:clamp(24px,4vw,36px)}
+  header p{margin:0;opacity:.85}
+  main{max-width:1000px;margin:0 auto;padding:16px 24px 64px;display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--card);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+  .card h2{margin:0;font-size:20px}
+  .card p{margin:0;color:var(--muted);line-height:1.5;flex:1}
+  .tag{align-self:flex-start;font-size:12px;background:#e8efff;color:var(--accent);padding:3px 10px;border-radius:999px}
+  .btn{display:inline-block;text-align:center;padding:10px 16px;border-radius:10px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+  .btn.off{background:#c9d1e3;pointer-events:none}
+  footer{text-align:center;color:#fff;opacity:.7;padding-bottom:32px;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>학교 산업안전보건 통합 포털</h1>
+  <p>MSDS 관리 · 산업안전보건 AI 챗봇 · 시설안전 점검 이력관리</p>
+</header>
+<main id="cards"></main>
+<footer>각 서비스는 apps/ 폴더에서 개발하며 main 브랜치에 병합되면 자동으로 빌드·배포됩니다.</footer>
+<script src="config.js"></script>
+<script>
+  const cfg = window.PORTAL_CONFIG || {};
+  const services = [
+    {tag:'MSDS', name:'MSDS·유해물질 관리', desc:'MSDS PDF 등록, 유해물질 규제 정보 조회, 경고표지 관리 시스템입니다.', url:cfg.msdsUrl},
+    {tag:'AI 챗봇', name:'학교 산업안전보건 AI', desc:'산업안전보건 매뉴얼·규정 근거를 검색해 답변하는 근거 기반 AI 챗봇입니다.', url:cfg.chatbotUrl},
+    {tag:'시설안전', name:'시설안전 점검 이력관리', desc:'점검 평가표 PDF를 읽어 미이행 항목 이력을 관리하고 결과보고서를 출력합니다.', url:cfg.facilityUrl || 'facility-safety/'}
+  ];
+  document.getElementById('cards').innerHTML = services.map(s => `
+    <section class="card">
+      <span class="tag">${s.tag}</span>
+      <h2>${s.name}</h2>
+      <p>${s.desc}</p>
+      <a class="btn ${s.url ? '' : 'off'}" ${s.url ? 'href="'+s.url+'"' : ''}>${s.url ? '열기' : '준비 중'}</a>
+    </section>`).join('');
+</script>
+</body>
+</html>
